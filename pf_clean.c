@@ -23,7 +23,7 @@ int main(int argc, char**argv)
 {
 	size_t i;	
 	/* Make some space for a to point to, and assign it*/
-	void* b[sizeof(*a)/sizeof(**a)];
+	void* buf[sizeof(*a)/sizeof(**a)];
 	a = (void*)buf;
 	
 	/* Populate the first function pointer */
