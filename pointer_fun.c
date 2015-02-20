@@ -14,7 +14,7 @@ void* findNext(void* arg)
 int main(int argc, char**argv)
 {
 	size_t i;	
-	char b[sizeof(*a)];
+	void* b[sizeof(*a)/sizeof(**a)];
 	a = (void*)b;
 	(*a)[0] = findNext;
 	for(i = 0; i < sizeof(*a)/sizeof(**a) -1; i++)
