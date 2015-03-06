@@ -17,9 +17,7 @@ void __attribute__((weak)) your_function(void)
 
 int main(int argc, char** argv)
 {
-	char buf[512];
-	char *s = buf;
-	sprintf(buf, "%s", &your_string);
+	char *s = &your_string;
 	while(*s)
 	{
 		printf("(0x%hX)[%c] ", *s, *s);
