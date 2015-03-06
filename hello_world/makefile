@@ -1,4 +1,5 @@
 EXES := hello_world ascii_to_asm
+CFLAGS = -Wall -Wextra -std=gnu99 -g
 
 .PHONY: all clean
 
@@ -11,4 +12,4 @@ hello_world: hello_world.S
 	$(CC) -m64 $< -o $@
 
 ascii_to_asm: ascii_to_asm.c
-	$(CC) -Wall -Wextra $< -o $@
+	$(CC) $(CFLAGS) $< -o $@
