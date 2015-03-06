@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
+#include "ascii_to_asm.h"
 /* http://ref.x86asm.net/coder32.html */
 
 static const char * strings[] =
@@ -35,7 +37,7 @@ static const char * strings[] =
 "POP 	%ECX /*59 Y */",
 "POP 	%EDX /*5A Z */",
 "POP 	%EBX /*5B [ */",
-"POP 	%ESP /*5C \\ */",
+"POP 	%ESP /*5C \\ */", //Disabled, changing the stack that much makes it hard to recover
 "POP 	%EBP /*5D ] */",
 "POP 	%ESI /*5E ^ */",
 "POP 	%EDI /*5F _ */",
@@ -53,11 +55,14 @@ static const size_t numStrings = sizeof(strings) / sizeof(strings[0]);
 #define INC_ESP		0x44
 #define POP_ESP		0x5c
 
-static int stackMod = 0;
+static int stackDelta = 0;
+static int maxStack = 0;
+static int minStack = 0;
 
 static int stackCalc(char c)
 {
 	int stackChange = 0;
+	c = toupper(c);
 	if(c == POP_ESP){
 		stackChange = 0; //instruction disabled
 	}else if(c >= PUSH_IX && c <= PUSH_IX_END) {
@@ -68,6 +73,15 @@ static int stackCalc(char c)
 		stackChange = -1;
 	} else if( c == INC_ESP) {
 		stackChange = 1;
+	}
+	stackDelta += stackChange;
+
+	if(stackDelta > maxStack) {
+		maxStack = stackDelta;
+	}
+
+	if(stackDelta < minStack) {
+		minStack = stackDelta;
 	}
 	return stackChange;
 }
@@ -95,8 +109,82 @@ static inline int table_idx(char c)
 
 static inline const char* getStr(char c)
 {
-	stackMod += stackCalc(c);
+	stackCalc(c);
 	return strings[table_idx(c)];
+}
+
+void convert_string(const char* s)
+{
+	size_t bufSize = 0;
+	char* buffer;
+	FILE * stream = open_memstream(&buffer, &bufSize);
+
+	/* Write out the "string" instructions to a temp buffer */
+	while(*s)
+	{
+		fprintf(stream, "%s\n", getStr(*s));
+		s++;
+	}
+	fflush (stream);
+
+	/* We're going to try to produce runnable code by:
+	 * 1) Calculate the total stack space change, adjust in other direction
+	 * 2) Disable popping into ESP, so our initial stack is preserved.
+	 * 3) Save all registers before running user code, restore them after
+	 */
+
+	/* Setup the header */
+	printf(".code32\n");
+	printf(".globl your_function\n");
+	printf("your_function:\n");
+
+	printf("ENTER \t$4, $0\n");
+	//Save the registers to a fixed location, ignore eax (return register, value doesn't matter) */
+	printf("MOV \t$saved_regs, %%EAX\n");
+	printf("MOV \t%%EBX, 0x00(%%EAX)\n");
+	printf("MOV \t%%ECX, 0x04(%%EAX)\n");
+	printf("MOV \t%%EDX, 0x08(%%EAX)\n");
+	printf("MOV \t%%EDI, 0x0C(%%EAX)\n");
+	printf("MOV \t%%ESI, 0x10(%%EAX)\n");
+	printf("MOV \t%%ESP, 0x14(%%EAX)\n");
+	printf("MOV \t%%EBP, 0x18(%%EAX)\n");
+
+	//They wanted to pop a bunch of stuff, so make room for them to do it without stepping on
+	//Other stuff
+	if(maxStack > 0) {
+		printf("SUB \t$%d, %%ESP\n", maxStack);
+	}
+
+	printf(".globl your_string\n");
+	printf("your_string:\n");
+
+	//Copy the instrucstions that make up the string out to stdout
+	printf("%s", buffer);
+
+	/* Null terminator. The de-ref is fine because we disallow popping the stack into ESP
+	 * They could have pushed enough to run out of stack, but that will crash before this	 */
+	printf("ADD \t%%ah, (%%ESP)\n");
+
+	//Restore the registers
+	printf("MOV \t$saved_regs, %%EAX\n");
+	printf("MOV \t0x00(%%EAX),%%EBX\n");
+	printf("MOV \t0x04(%%EAX),%%ECX\n");
+	printf("MOV \t0x08(%%EAX),%%EDX\n");
+	printf("MOV \t0x0C(%%EAX),%%EDI\n");
+	printf("MOV \t0x10(%%EAX),%%ESI\n");
+	printf("MOV \t0x14(%%EAX),%%ESP\n");
+	printf("MOV \t0x18(%%EAX),%%EBP\n");
+	printf("XOR \t%%EAX, %%EAX\n");
+	printf("LEAVE\n");
+	printf("RET\n");
+	printf(".section .data\n");
+	printf("saved_regs:\n.skip 0x40\n");
+
+	if(buffer)
+	{
+		fclose(stream);
+		free(buffer);
+	}
 }
 
 int main(int argc, char** argv)
@@ -109,56 +197,9 @@ int main(int argc, char** argv)
 		return -1;
 	}
 
-	size_t bufSize = 0;
-	char* buffer;
-	FILE * stream = open_memstream(&buffer, &bufSize);
-
-	/* Write out the "string" instructions to a temp buffer */
-	char *s = argv[1];
-	while(*s)
-	{
-		fprintf(stream, "%s\n", getStr(*s));
-		s++;
-	}
-	fflush (stream);
-
-	/* Setup the header */
-	printf(".code32\n");
-	printf(".globl your_function\n");
-	printf("your_function:\n");
-
-	//Push the registers
-	for(int i = PUSH_IX; i <= PUSH_IX_END; i++) {
-		printf("%s\n", strings[i - FIRST_INDEX]);
-	}
-
-	//They wanted to pop a bunch of shit, so make room for them to do it!
-	if(stackMod > 0) {
-		printf("SUB \t$%d, %%ESP\n", stackMod);
-	}
-
-	printf(".globl your_string\n");
-	printf("your_string:\n");
-
-	printf("%s", buffer);
-
-	//Null terminator. The de-ref is fine because we disallow popping the stack into ESP
-	printf("ADD \t(%%ESP), %%al\n");
-
-	if(stackMod < 0) {
-		printf("ADD \t$%d, %%ESP\n", stackMod);
-	}
-
-	//Pop the registers back out
-	for(int i = POP_IX; i <= POP_IX_END; i++) {
-		printf("%s\n", strings[i - FIRST_INDEX]);
-	}
-	printf("RET\n\n");
-
-	if(buffer)
-	{
-		free(buffer);
-	}
+	convert_string(argv[1]);
 
 	return 0;
 }
+
+
