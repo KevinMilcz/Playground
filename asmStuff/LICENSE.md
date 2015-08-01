@@ -1,4 +1,3 @@
-/*
 The MIT License (MIT)
 
 Copyright (c) 2015 Kevin Milczewski <kmilczewski@gmail.com>
@@ -20,19 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
- */
-
-#ifndef MEMCPY_FUNCS_H_
-#define MEMCPY_FUNCS_H_
-
-#include <stdint.h>
-
-
-extern void* sse2_memcpy(void * restrict dest, const void * restrict src, size_t len);
-extern void* movs_memcpy(void * restrict dest, const void * restrict src, size_t len);
-extern void* c_memcpy(void * restrict dest, const void * restrict src, size_t len);
-extern void* byte_copy(void * restrict dest, const void * restrict source, size_t len);
-extern void* small_copy(void * restrict dest, const void * restrict source, size_t len);
-extern void* really_small_copy(void * restrict dst, const void * restrict src, size_t len);
-
-#endif /* MEMCPY_FUNCS_H_ */

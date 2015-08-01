@@ -1,0 +1,5 @@
+A collection of optimized and reference implementations of stdlib functions.
+
+The goal of this project is to implement some common functions in hand rolled
+assembly and beat the stdlib on some performance metrics. Eventually if confidence is
+high in the metrics, we can apply some of the improvements to glibc.

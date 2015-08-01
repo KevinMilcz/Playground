@@ -1,3 +1,28 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2015 Kevin Milczewski <kmilczewski@gmail.com>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+ */
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -12,7 +37,7 @@
 #include "memset_funcs.h"
 #include "utils/x86_alignment_check.h"
 #include "utils/c11_macros.h"
-#include "utils/mem_test_utils.h"
+#include "mem_test_utils.h"
 
 #define BUFFER_ZONE 128
 
@@ -22,7 +47,7 @@ static const size_t mem_sizes[] = {	0x8, 0x10, 0x20, 0x40, 0x80, 0x100, 0x200,
 		1*MB, 2*MB, 4*MB, 8*MB, 16*MB, 32*MB, 64*MB, 128*MB, 256*MB, 512*MB
 };
 
-static const size_t small_mem_sizes[] = { 7, 4, 5, 2, 1, 6 , 3 };
+static const size_t small_mem_sizes[] = { 1, 2, 3, 4, 5, 6 , 7 };
 
 /**
  * SIGBUS handling derived from:
