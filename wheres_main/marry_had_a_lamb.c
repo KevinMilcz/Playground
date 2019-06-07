@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-char main[4096 * 2] = "Marry had a little lamb, his fleece was white as snow\n";
+char main[4096 * 2] = "Marry had a little lamb, its fleece was white as snow\n";
 
 int had_a_little_lamb(void) {
 	mprotect((void*)((uintptr_t)main & ~(4096ULL-1)), 4096, 3);
